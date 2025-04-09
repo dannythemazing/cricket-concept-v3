@@ -248,6 +248,9 @@ class Ball {
             if (wasCombo) {
                  this.showFloatingText('Combo Lost!', true); // Show combo lost near the ball
             }
+            // Deduct points for early/late click
+            const scoreResult = this.game.addScore(-1); // Deduct 1 point for early/late click
+            this.showFloatingText(`-${Math.abs(scoreResult.pointsAdded)}`, true); // Show negative points
             this.remove();
         }
     }
@@ -708,29 +711,44 @@ class Game {
             this.bgMusic.play().catch(e => console.log('BG music start failed:', e));
         }
         
-        // Add global miss listener
-        this.container.addEventListener('click', (e) => {
-            if (e.target === this.container && this.gameStarted && !this.isPaused) {
-                this.handleGlobalMiss(e);
+        // Add global miss listener with proper this binding
+        const handleGlobalMiss = (e) => {
+            // Check if the click is not on a ball
+            let isBallClick = false;
+            for (const ball of this.balls) {
+                const rect = ball.element.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right &&
+                    e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    isBallClick = true;
+                    break;
+                }
             }
-        });
+            
+            if (!isBallClick && this.gameStarted && !this.isPaused) {
+                // Show "Miss!" text at click location
+                this.showFloatingTextAtPoint('Miss!', e.clientX, e.clientY);
+                
+                const wasCombo = this.combo > 0; // Check if combo existed BEFORE reset
+                this.resetCombo(); 
+                this.playMissSound(); 
+                if (wasCombo) {
+                    // Show "Combo Lost!" text at click location
+                    this.showFloatingTextAtPoint('Combo Lost!', e.clientX, e.clientY, true);
+                }
+                // Deduct points for missing
+                const scoreResult = this.addScore(-1); // Deduct 1 point for missing
+                this.showFloatingTextAtPoint(`-${Math.abs(scoreResult.pointsAdded)}`, e.clientX, e.clientY, true);
+            }
+        };
+
+        // Add click handler to document instead of just container
+        document.addEventListener('click', handleGlobalMiss);
+        
         // Add touch listener for misses (use touchend to avoid conflict with ball touchend)
-        this.container.addEventListener('touchend', (e) => {
-             if (e.target === this.container && this.gameStarted && !this.isPaused) {
-                // Check if the touch didn't hit any ball
+        document.addEventListener('touchend', (e) => {
+            if (this.gameStarted && !this.isPaused) {
                 const touch = e.changedTouches[0];
-                let hitBall = false;
-                for (const ball of this.balls) {
-                    const rect = ball.element.getBoundingClientRect();
-                    if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-                        touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-                        hitBall = true;
-                        break;
-                    }
-                }
-                if (!hitBall) {
-                   this.handleGlobalMiss(touch);
-                }
+                handleGlobalMiss(touch);
             }
         });
         
@@ -752,6 +770,9 @@ class Game {
             // Show "Combo Lost!" text at click location
             this.showFloatingTextAtPoint('Combo Lost!', event.clientX, event.clientY, true);
         }
+        // Deduct points for missing
+        const scoreResult = this.addScore(-1); // Deduct 1 point for missing
+        this.showFloatingTextAtPoint(`-${Math.abs(scoreResult.pointsAdded)}`, event.clientX, event.clientY, true);
     }
 
     setupControlButtons() {
@@ -806,7 +827,7 @@ class Game {
 
     playHitSound() {
         if (!this.soundEnabled) return;
-        const hitSound = new Audio(this.currentEnvironment === 'jungle' ? 'assets/hit.mp3' : 'assets/arctic_hit.mp3'); // Assuming different sounds per env
+        const hitSound = new Audio(this.currentEnvironment === 'jungle' ? 'assets/hit.m4a' : 'assets/arctic_hit.m4a'); // Changed from mp3 to m4a
         hitSound.volume = 0.4;
         hitSound.play().catch(e => console.log('Error playing hit sound:', e));
     }
@@ -851,6 +872,10 @@ class Game {
         const multiplier = this.getMultiplier();
         const pointsAdded = basePoints * multiplier;
         this.score += pointsAdded;
+        // Ensure score doesn't go below 0
+        if (this.score < 0) {
+            this.score = 0;
+        }
         this.updateScore();
         // Return both points added and the multiplier used
         return { pointsAdded: pointsAdded, multiplier: multiplier }; 
