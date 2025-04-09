@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <video class="background-video" autoplay loop muted playsinline>
+            <source src="assets/video.mp4" type="video/mp4" id="videoSource">
+            <!-- Fallback message if video doesn't load -->
+            Your browser does not support the video tag.
+        </video>
+        
+        <div class="control-panel">
+            <div class="control-button" id="pauseButton">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                </svg>
+            </div>
+            <div class="control-button" id="soundButton">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div id="score-display">
+            <div>Score: <span id="score">0</span></div>
+            <div>Combo: <span id="combo">0</span></div>
+        </div>
+        
+        <div class="pause-overlay" id="pauseOverlay">
+            <h2>GAME PAUSED</h2>
+            <div class="pause-score">
+                <div>Score: <span id="pauseScore">0</span></div>
+                <div>Combo: <span id="pauseCombo">0</span></div>
+            </div>
+            <div class="environment-selector">
+                <button class="environment-button" id="pauseJungleButton">JUNGLE</button>
+                <button class="environment-button" id="pauseArcticButton">ARCTIC</button>
+            </div>
+            <button class="resume-button" id="resumeButton">RESUME</button>
+        </div>
+        
+        <div class="start-screen" id="startScreen">
+            <h1>CRICKET GAME</h1>
+            <p>Select Environment:</p>
+            <div class="environment-selector">
+                <button class="environment-button active" id="startJungleButton">JUNGLE</button>
+                <button class="environment-button" id="startArcticButton">ARCTIC</button>
+            </div>
+            <button class="start-button" id="startButton">START GAME</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html> 
