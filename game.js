@@ -609,46 +609,42 @@ class Game {
     }
 
     setupStartScreen() {
-        this.startButton.addEventListener('click', () => {
-            // --- Audio Unlock Attempt --- 
-            // On first click, try to play (muted) then pause the current bgMusic
-            // This helps satisfy browser autoplay policies
-            const initialPlay = () => {
-                if (this.bgMusic) {
-                    const currentVolume = this.bgMusic.volume; // Store current volume
-                    this.bgMusic.volume = 0; // Mute temporarily
-                    const playPromise = this.bgMusic.play();
-                    
-                    if (playPromise !== undefined) {
-                        playPromise.then(_ => {
-                            // Play started, now pause immediately
-                            this.bgMusic.pause();
-                            this.bgMusic.volume = currentVolume; // Restore volume
-                            console.log("Audio context likely unlocked.");
-                            // Now proceed with starting the game
-                            this.startGame(); 
-                        }).catch(error => {
-                            console.error("Audio unlock play failed:", error);
-                            // Still proceed with starting the game even if unlock fails
-                            this.bgMusic.volume = currentVolume; // Restore volume
-                            this.startGame();
-                        });
-                    } else {
-                         // If play() doesn't return a promise (older browsers?), just start game
-                         this.startGame();
-                    }
+        // --- Audio Unlock and Start Logic --- 
+        const initialPlayAndStart = () => {
+            // Try to unlock audio context first
+            if (this.bgMusic && this.bgMusic.paused) { // Check if music exists and is paused
+                const currentVolume = this.bgMusic.volume;
+                this.bgMusic.volume = 0; // Mute for unlock attempt
+                const playPromise = this.bgMusic.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        this.bgMusic.pause(); // Pause immediately after starting
+                        this.bgMusic.volume = currentVolume; // Restore volume
+                        console.log("Audio context likely unlocked via event.");
+                        this.startGame(); // Start the game after successful unlock
+                    }).catch(error => {
+                        console.error("Audio unlock play failed:", error);
+                        this.bgMusic.volume = currentVolume; // Restore volume anyway
+                        this.startGame(); // Start game even if unlock fails
+                    });
                 } else {
-                    // If bgMusic isn't ready for some reason, start game anyway
-                    this.startGame();
+                    this.startGame(); // Fallback if no promise
                 }
-                // Remove this listener after first click
-                this.startButton.removeEventListener('click', initialPlay);
+            } else {
+                // If music already playing or not ready, just start
+                this.startGame();
             }
-            // Add the initial play logic to the start button click
-            // It will replace itself with the actual startGame call after running once.
-            initialPlay(); 
 
-        });
+            // --- Remove Listeners --- 
+            // Important: Remove both listeners after the first interaction
+            this.startButton.removeEventListener('click', initialPlayAndStart);
+            this.startButton.removeEventListener('touchend', initialPlayAndStart);
+        };
+        
+        // Attach the combined handler to both events
+        this.startButton.addEventListener('click', initialPlayAndStart);
+        this.startButton.addEventListener('touchend', initialPlayAndStart);
     }
 
     setupSoundHandlers() {
