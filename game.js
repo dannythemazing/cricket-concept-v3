@@ -236,7 +236,7 @@ class Ball {
             if (this.game.combo >= 2) {
                 this.showFloatingText(`🔥 Combo x${this.game.combo}!`, true);
             }
-            this.remove();
+            // Do not remove the ball immediately, allow multiple clicks
 
         } else {
             // Click was outside the valid time window (too early OR too late)
@@ -367,14 +367,17 @@ class Ball {
     }
 
     miss(isTimeout = true) {
-        const wasCombo = this.game.combo > 0; // Check if combo existed BEFORE reset
         if (isTimeout) {
             this.showFloatingText('Missed');
             this.game.playMissSound(); 
-        }
-        this.game.resetCombo();
-        if (wasCombo) {
-            this.showFloatingText('Combo Lost!', true); // Show combo lost near the ball
+            // Don't reset combo for timeout misses
+        } else {
+            // Only reset combo for early/late clicks
+            const wasCombo = this.game.combo > 0;
+            this.game.resetCombo();
+            if (wasCombo) {
+                this.showFloatingText('Combo Lost!', true);
+            }
         }
         this.remove();
     }
