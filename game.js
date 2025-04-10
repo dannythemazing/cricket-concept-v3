@@ -248,9 +248,6 @@ class Ball {
             if (wasCombo) {
                  this.showFloatingText('Combo Lost!', true); // Show combo lost near the ball
             }
-            // Deduct points for early/late click
-            const scoreResult = this.game.addScore(-1); // Deduct 1 point for early/late click
-            this.showFloatingText(`-${Math.abs(scoreResult.pointsAdded)}`, true); // Show negative points
             this.remove();
         }
     }
@@ -265,7 +262,9 @@ class Ball {
         
         // Position calculation (center above the ball)
         const textX = this.spawnPosition.x + (this.currentSize / 2);
-        const textY = this.spawnPosition.y - 20; // Start slightly above the ball center
+        // Add randomization to vertical position (-30 to -10 pixels from ball center)
+        const randomOffset = Math.random() * 20 - 30;
+        const textY = this.spawnPosition.y + randomOffset;
         
         floatingText.style.left = `${textX}px`;
         floatingText.style.top = `${textY}px`;
@@ -711,68 +710,11 @@ class Game {
             this.bgMusic.play().catch(e => console.log('BG music start failed:', e));
         }
         
-        // Add global miss listener with proper this binding
-        const handleGlobalMiss = (e) => {
-            // Check if the click is not on a ball
-            let isBallClick = false;
-            for (const ball of this.balls) {
-                const rect = ball.element.getBoundingClientRect();
-                if (e.clientX >= rect.left && e.clientX <= rect.right &&
-                    e.clientY >= rect.top && e.clientY <= rect.bottom) {
-                    isBallClick = true;
-                    break;
-                }
-            }
-            
-            if (!isBallClick && this.gameStarted && !this.isPaused) {
-                // Show "Miss!" text at click location
-                this.showFloatingTextAtPoint('Miss!', e.clientX, e.clientY);
-                
-                const wasCombo = this.combo > 0; // Check if combo existed BEFORE reset
-                this.resetCombo(); 
-                this.playMissSound(); 
-                if (wasCombo) {
-                    // Show "Combo Lost!" text at click location
-                    this.showFloatingTextAtPoint('Combo Lost!', e.clientX, e.clientY, true);
-                }
-                // Deduct points for missing
-                const scoreResult = this.addScore(-1); // Deduct 1 point for missing
-                this.showFloatingTextAtPoint(`-${Math.abs(scoreResult.pointsAdded)}`, e.clientX, e.clientY, true);
-            }
-        };
-
-        // Add click handler to document instead of just container
-        document.addEventListener('click', handleGlobalMiss);
-        
-        // Add touch listener for misses (use touchend to avoid conflict with ball touchend)
-        document.addEventListener('touchend', (e) => {
-            if (this.gameStarted && !this.isPaused) {
-                const touch = e.changedTouches[0];
-                handleGlobalMiss(touch);
-            }
-        });
-        
         // Spawn initial balls
         for (let i = 0; i < this.maxBalls; i++) {
             // Add slight delay between initial spawns
             setTimeout(() => this.spawnNewBall(), i * 150);
         }
-    }
-
-    handleGlobalMiss(event) {
-        // Show "Miss!" text at click location
-        this.showFloatingTextAtPoint('Miss!', event.clientX, event.clientY);
-        
-        const wasCombo = this.combo > 0; // Check if combo existed BEFORE reset
-        this.resetCombo(); 
-        this.playMissSound(); 
-        if (wasCombo) {
-            // Show "Combo Lost!" text at click location
-            this.showFloatingTextAtPoint('Combo Lost!', event.clientX, event.clientY, true);
-        }
-        // Deduct points for missing
-        const scoreResult = this.addScore(-1); // Deduct 1 point for missing
-        this.showFloatingTextAtPoint(`-${Math.abs(scoreResult.pointsAdded)}`, event.clientX, event.clientY, true);
     }
 
     setupControlButtons() {
